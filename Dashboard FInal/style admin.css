@@ -1,0 +1,157 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar styling */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #f39c12; /* Soft orange for a modern look */
+    color: #2c3e50; /* Dark text color */
+    padding-top: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+    transition: background 0.3s; /* Smooth background transition */
+}
+
+.sidebar-header {
+    text-align: center;
+    padding: 20px;
+    background-color: #e67e22; /* Darker orange header */
+    font-size: 1.5em;
+    font-weight: bold;
+    border-bottom: 1px solid #d35400; /* Border color matching the header */
+    font-family: 'Trebuchet MS', sans-serif;
+    letter-spacing: 1px;
+    margin-bottom: 20px; /* Adds space below the logo */
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.sidebar ul li {
+    position: relative;
+    margin-bottom: 15px; /* Adds space between each section */
+}
+
+.sidebar ul li a {
+    color: #2c3e50; /* Dark text color */
+    text-decoration: none;
+    display: flex; /* Flexbox for icon and text alignment */
+    align-items: center; /* Center items vertically */
+    padding: 15px 20px;
+    transition: background 0.3s, color 0.3s;
+    font-weight: 500;
+    border-radius: 5px;
+    position: relative; /* For pseudo-element positioning */
+}
+
+.sidebar ul li a i {
+    margin-right: 10px; /* Space between icon and text */
+}
+
+/* Active link styling */
+.sidebar ul li a.active {
+    background-color: #d35400; /* Darker orange for active link */
+    font-weight: bold;
+    color: #ffffff;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Add a pseudo-element for full highlight effect */
+.sidebar ul li a.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 100%;
+    width: 5px; /* Width of the highlight */
+    background-color: #c0392b; /* Darker red for the highlight */
+    border-radius: 5px 0 0 5px; /* Rounded corners on the left */
+}
+
+/* Log Out button styling */
+.logout-button-container {
+    margin-top: auto;
+    padding: 20px;
+}
+
+.logout-button {
+    display: block;
+    padding: 10px 15px;
+    background-color: #e74c3c; /* Red for log out */
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.3s; /* Smooth transition */
+}
+
+.logout-button:hover {
+    background-color: #c0392b; /* Darker red on hover */
+    transform: scale(1.05);
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.logout-button:active {
+    transform: scale(0.98);
+}
+
+/* Main content styling */
+.main-content {
+    margin-left: 260px; /* Space for sidebar */
+    padding: 20px;
+    background-color: #f4f4f4;
+    min-height: 100vh;
+    overflow-y: auto; /* Allow vertical scrolling */
+}
+
+header {
+    background-color: #f57c00; /* Orange */
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* File upload styling */
+.file-upload {
+    margin: 10px 0;
+}
+
+.file-link {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.file-link:hover {
+    text-decoration: underline;
+}
