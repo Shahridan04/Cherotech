@@ -20,9 +20,9 @@ $result = mysqli_query($conn, $query);
             margin: 0;
             padding: 20px;
             display: flex;
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            height: 100vh; /* Full viewport height */
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
         h1 {
@@ -34,8 +34,8 @@ $result = mysqli_query($conn, $query);
         table {
             width: 80%;
             border-collapse: collapse;
-            margin: 0 auto; /* Center the table */
-            background-color: #fff; /* White background for the table */
+            margin: 0 auto;
+            background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
@@ -52,40 +52,50 @@ $result = mysqli_query($conn, $query);
         }
 
         tr:hover {
-            background-color: #f9f9f9; /* Highlight row on hover */
+            background-color: #f9f9f9;
         }
 
-        .approve-btn {
-            background-color: #28a745; /* Green color */
-            color: white;
+        .approve-btn, .reject-btn {
             padding: 5px 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            color: white;
+        }
+
+        .approve-btn {
+            background-color: #28a745;
         }
 
         .approve-btn:hover {
-            background-color: #218838; /* Darker green on hover */
+            background-color: #218838;
+        }
+
+        .reject-btn {
+            background-color: #dc3545; /* Red color */
+        }
+
+        .reject-btn:hover {
+            background-color: #c82333; /* Darker red on hover */
         }
 
         .download-btn {
-            background-color: #ff9800; /* Orange color */
+            background-color: #ff9800;
             color: white;
-            padding: 5px 15px; /* Increased padding for a better look */
+            padding: 5px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            text-decoration: none; /* Remove underline from link */
-            display: inline-block; /* Ensure it behaves like a button */
+            text-decoration: none;
+            display: inline-block;
         }
 
         .download-btn:hover {
-            background-color: #e68900; /* Darker orange on hover */
+            background-color: #e68900;
         }
 
-        /* Adjust column width */
         td:last-child {
-            width: 150px; /* Set a fixed width for the receipt column */
+            width: 150px;
         }
     </style>
 </head>
@@ -113,6 +123,7 @@ $result = mysqli_query($conn, $query);
                 <td><?php echo htmlspecialchars($row['membership']); ?></td>
                 <td>
                     <button class="approve-btn" data-id="<?php echo $row['id']; ?>">Approve</button>
+                    <button class="reject-btn" data-id="<?php echo $row['id']; ?>">Reject</button>
                 </td>
                 <td>
                     <?php if (!empty($row['file_path'])): ?>
@@ -136,7 +147,20 @@ $result = mysqli_query($conn, $query);
                     data: { id: memberId },
                     success: function(response) {
                         alert(response);
-                        location.reload(); // Refresh the page to see updated status
+                        location.reload();
+                    }
+                });
+            });
+
+            $('.reject-btn').click(function() {
+                var memberId = $(this).data('id');
+                $.ajax({
+                    url: 'reject_member_ajax.php',
+                    type: 'POST',
+                    data: { id: memberId },
+                    success: function(response) {
+                        alert(response);
+                        location.reload();
                     }
                 });
             });

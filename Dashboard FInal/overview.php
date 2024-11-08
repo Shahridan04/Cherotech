@@ -1,55 +1,28 @@
 <?php
 include 'db_connect.php';
 
-// Fetch total number of files (members)
-$totalFilesQuery = "SELECT COUNT(*) as total FROM files"; 
-$totalFilesResult = $conn->query($totalFilesQuery);
-$totalFiles = $totalFilesResult->fetch_assoc()['total'];
+// Fetch summary data with optimized queries
+$summaryQuery = "
+    SELECT
+        (SELECT COUNT(*) FROM files) as totalFiles,
+        (SELECT COUNT(*) FROM files WHERE gender = 'Male') as totalMale,
+        (SELECT COUNT(*) FROM files WHERE gender = 'Female') as totalFemale,
+        (SELECT COUNT(*) FROM files WHERE status = 'Pending') as totalPending,
+        (SELECT COUNT(*) FROM files WHERE membership = 'Monthly') as totalMonthly,
+        (SELECT COUNT(*) FROM files WHERE membership = '3-Month') as total3Month,
+        (SELECT COUNT(*) FROM files WHERE membership = 'Yearly') as totalYearly
+";
+$summaryResult = $conn->query($summaryQuery);
+$summaryData = $summaryResult->fetch_assoc();
 
-// Fetch total number of male and female members
-$genderQuery = "SELECT gender, COUNT(*) as count FROM files GROUP BY gender";
-$genderResult = $conn->query($genderQuery);
-
-$genderCounts = [];
-while ($row = $genderResult->fetch_assoc()) {
-    $genderCounts[$row['gender']] = $row['count'];
-}
-$totalMale = $genderCounts['Male'] ?? 0;
-$totalFemale = $genderCounts['Female'] ?? 0;
-
-// Fetch total number of pending approvals
-$totalPendingQuery = "SELECT COUNT(*) as total FROM files WHERE status = 'Pending'";
-$totalPendingResult = $conn->query($totalPendingQuery);
-
-if ($totalPendingResult) {
-    $totalPending = $totalPendingResult->fetch_assoc()['total'];
-} else {
-    $totalPending = 0; // Default to 0 if the query fails
-}
-
-// Fetch membership counts and calculate revenue
-$membershipQuery = "SELECT membership, COUNT(*) as count FROM files GROUP BY membership";
-$membershipResult = $conn->query($membershipQuery);
-
-$membershipCounts = [];
-$totalRevenue = 0;
-while ($row = $membershipResult->fetch_assoc()) {
-    $membershipCounts[$row['membership']] = $row['count'];
-    switch ($row['membership']) {
-        case 'Monthly':
-            $totalRevenue += $row['count'] * 130;
-            break;
-        case '3-Month':
-            $totalRevenue += $row['count'] * 360;
-            break;
-        case 'Yearly':
-            $totalRevenue += $row['count'] * 1260;
-            break;
-    }
-}
-$totalMonthly = $membershipCounts['Monthly'] ?? 0;
-$total3Month = $membershipCounts['3-Month'] ?? 0;
-$totalYearly = $membershipCounts['Yearly'] ?? 0;
+$totalFiles = $summaryData['totalFiles'];
+$totalMale = $summaryData['totalMale'];
+$totalFemale = $summaryData['totalFemale'];
+$totalPending = $summaryData['totalPending'];
+$totalMonthly = $summaryData['totalMonthly'];
+$total3Month = $summaryData['total3Month'];
+$totalYearly = $summaryData['totalYearly'];
+$totalRevenue = ($totalMonthly * 130) + ($total3Month * 360) + ($totalYearly * 1260);
 
 // Fetch age distribution (grouping into ranges)
 $ageQuery = "
@@ -78,6 +51,22 @@ while ($row = $ageResult->fetch_assoc()) {
 $ageLabels = array_keys($ageDistribution);
 $ageCounts = array_values($ageDistribution);
 
+// Fetch monthly registration data
+$monthlyRegistrationQuery = "
+    SELECT DATE_FORMAT(registration_date, '%Y-%m') AS month, COUNT(*) as count
+    FROM files
+    GROUP BY month
+    ORDER BY month ASC
+";
+$monthlyRegistrationResult = $conn->query($monthlyRegistrationQuery);
+
+$monthlyRegistrations = [];
+while ($row = $monthlyRegistrationResult->fetch_assoc()) {
+    $monthlyRegistrations[$row['month']] = $row['count'];
+}
+$registrationLabels = array_keys($monthlyRegistrations);
+$registrationCounts = array_values($monthlyRegistrations);
+
 // Fetch recent files (new members)
 $recentFilesQuery = "SELECT name, email, phone, gender, membership FROM files ORDER BY registration_date DESC LIMIT 10";
 $recentFilesResult = $conn->query($recentFilesQuery);
@@ -101,7 +90,7 @@ $conn->close();
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;
+            padding: 0px;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -136,13 +125,13 @@ $conn->close();
         .graph-container {
             display: flex;
             flex-direction: column;
-            width: 100%; /* Full width for the graph container */
-            padding: 20px;
+            width: 100%;
+            padding: 10px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            margin-left: 20px; /* Added margin to the left for centering */
+            margin-top: 0px;
+            margin-left: 5px;
         }
 
         .totals {
@@ -172,19 +161,31 @@ $conn->close();
             color: #ff9800;
         }
 
-        /* Change color for pending approvals */
         .pending-approval {
-            background: #ffcccc; /* Soft red */
+            background: #fff3cd; /* Soft yellow */
+        }
+
+        .pending-approval .badge {
+            background: red;
+            color: #fff;
+            border-radius: 50%;
+            padding: 5px 10px;
+            font-weight: bold;
+        }
+
+        .charts-row {
+            display: flex;
+            justify-content: space-between;
         }
 
         .chart-container {
-            width: 100%; 
-            margin-bottom: 20px;
+            width: 48%;
+            margin-bottom: 10px;
         }
 
         canvas {
-            max-height: 400px; /* Increased max height for charts */
-            height: 400px; /* Set a fixed height for better visibility */
+            max-height: 400px;
+            height: 400px;
         }
 
         table {
@@ -212,18 +213,42 @@ $conn->close();
             background-color: #f9f9f9;
         }
 
-        h2 {
+        h4 {
+            margin-top: 10px;
+            color: #333;
+            padding: 10px;
+            background-color: #e9ecef; /* Light gray background */
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h3, {
             margin-top: 30px;
             color: #333;
+            padding: 10px;
+            background-color: #e9ecef; /* Light gray background */
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .charts-row {
-            display: flex;
-            justify-content: space-between;
-        }
+        /* Responsive Design Improvements */
+        @media (max-width: 768px) {
+            .totals {
+                flex-direction: column;
+                margin-bottom: 10px;
+            }
 
-        .chart-container {
-            width: 48%; /* Adjust width for side-by-side display */
+            .total-box {
+                margin-bottom: 20px;
+            }
+
+            .charts-row {
+                flex-direction: column;
+            }
+
+            .chart-container {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -248,7 +273,7 @@ $conn->close();
                 </div>
                 <div class="total-box <?php echo $totalPending > 0 ? 'pending-approval' : ''; ?>">
                     <h3>Pending Approval</h3>
-                    <p><?php echo $totalPending; ?></p>
+                    <p><?php echo $totalPending; ?> </p>
                 </div>
                 <div class="total-box">
                     <h3>Total Revenue</h3>
@@ -282,19 +307,22 @@ $conn->close();
         </div>
 
         <div class="graph-container">
-            <h3>Charts</h3>
+
+            <div class="charts-row">
+                <div class="chart-container">
+                    <h4>Membership Types</h4>
+                    <canvas id="membershipChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>Monthly Registrations</h4>
+                    <canvas id="monthlyRegistrationChart"></canvas>
+                </div>
+            </div>
             <div class="charts-row">
                 <div class="chart-container">
                     <h4>Gender Distribution</h4>
                     <canvas id="genderChart"></canvas>
                 </div>
-                <div class="chart-container">
-                    <h4>Membership Types</h4>
-                    <canvas id="membershipChart"></canvas>
-                </div>
-            </div>
-
-            <div class="charts-row">
                 <div class="chart-container">
                     <h4>Age Distribution</h4>
                     <canvas id="ageChart"></canvas>
@@ -304,7 +332,7 @@ $conn->close();
     </div>
 
     <script>
-        // Data for Gender Distribution Chart
+        // Gender Distribution Chart
         const genderData = {
             labels: ['Male', 'Female'],
             datasets: [{
@@ -313,8 +341,6 @@ $conn->close();
                 backgroundColor: ['#FF6384', '#36A2EB'],
             }]
         };
-
-        // Create Pie Chart for Gender Distribution
         const genderCtx = document.getElementById('genderChart').getContext('2d');
         const genderChart = new Chart(genderCtx, {
             type: 'pie',
@@ -322,10 +348,20 @@ $conn->close();
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let percentage = ((context.raw / <?php echo $totalFiles; ?>) * 100).toFixed(2);
+                                return `${context.label}: ${context.raw} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
             }
         });
 
-        // Data for Membership Types Chart
+        // Membership Types Chart
         const membershipData = {
             labels: ['Monthly', '3-Month', 'Yearly'],
             datasets: [{
@@ -336,8 +372,6 @@ $conn->close();
                 borderWidth: 1,
             }]
         };
-
-        // Create Bar Chart for Membership Types
         const membershipCtx = document.getElementById('membershipChart').getContext('2d');
         const membershipChart = new Chart(membershipCtx, {
             type: 'bar',
@@ -353,7 +387,7 @@ $conn->close();
             }
         });
 
-        // Data for Age Distribution Chart
+        // Age Distribution Chart
         const ageData = {
             labels: <?php echo json_encode($ageLabels); ?>,
             datasets: [{
@@ -362,12 +396,37 @@ $conn->close();
                 backgroundColor: '#36A2EB',
             }]
         };
-
-        // Create Bar Chart for Age Distribution
         const ageCtx = document.getElementById('ageChart').getContext('2d');
         const ageChart = new Chart(ageCtx, {
             type: 'bar',
             data: ageData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Monthly Registration Chart
+        const registrationData = {
+            labels: <?php echo json_encode($registrationLabels); ?>,
+            datasets: [{
+                label: 'Monthly Registrations',
+                data: <?php echo json_encode($registrationCounts); ?>,
+                backgroundColor: '#FFCE56',
+                borderColor: '#FF6384',
+                fill: false,
+                tension: 0.1
+            }]
+        };
+        const registrationCtx = document.getElementById('monthlyRegistrationChart').getContext('2d');
+        const monthlyRegistrationChart = new Chart(registrationCtx, {
+            type: 'line',
+            data: registrationData,
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
